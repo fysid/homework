@@ -1,11 +1,11 @@
-import datetime
 from __future__ import annotations
+import datetime
 
 
 # stors names and date of event
 class ChronEvent:
-    def __init__(self, datetime: datetime.datetime, name: str):
-        self.datetime = datetime
+    def __init__(self, date_time: datetime.datetime, name: str):
+        self.datetime = date_time
         self.name = name
 
     def __str__(self):
@@ -23,7 +23,7 @@ class Chronicle:
         add events in events list
         '''
         self.events.append(chrone_event)
-        self.events.sort(key=lambda event: event.datetime)
+        self.events.sort(key=lambda event: event.date_time)
 
     def combine(self, other_chronicle: Chronicle):
         '''
@@ -54,10 +54,75 @@ class Documents:
 class ChronIdentity:
     def __init__(self, chronicles: tuple):
         self.chronicles = chronicles
+        self.required = []
+        self.prevents = []
 
     @property
     def name(self):
         return self.chronicles[0].name
+
+    def require(self, req: ChronIdentity):
+        '''
+        add requirement identity event for current 
+        '''
+        self.required.append(req)
+
+    def prevent(self, prev: ChronIdentity):
+        '''
+        add prevent identity event for current 
+        '''
+        self.prevents.append(prev)
+
+
+class Chronology:
+    def __init__(self, chronic: Chronicle, identity: ChronIdentity):
+        self.chronic = chronic
+        self.identity = identity
+
+    def verify(self):
+        ''''
+        verifying events which wrong with current event
+        '''
+        # check on existence requirement identity event
+        reqcheck = [0] * len(self.identity.required)
+        for i, identevents in enumerate(self.identity.required):
+            for eachevent in identevents:
+                for chronicevents in self.chronic:
+                    if eachevent == chronicevents:
+                        reqcheck[i] += 1
+        # check on existence prevent event
+        prevcheck = [0] * len(self.identity.prevents)
+        for i, prevent in enumerate(self.identity.prevents):
+            for eachevent in prevent:
+                for chronicevents in self.chronic:
+                    if eachevent == chronicevents:
+                        prevcheck[i] += 1
+        needevents = []
+        # get requirements events
+        for i, value in enumerate(reqcheck):
+            if value == 0:
+                needevents.append(self.identity.required[i])
+        errorevents = []
+        # get prevents events
+        for i, value in enumerate(prevcheck):
+            if value > 0:
+                errorevents.append(self.identity.prevents[i])
+        # check on summury error events
+        if len(needevents) + len(errorevents) == 0:
+            return True
+        # print requirements events
+        if len(needevents) > 0:
+            print(f"For event {self.identity[0]} we need: ", end='')
+            for events in needevents:
+                print(events[0], end='')
+        # print prevent events
+        if len(errorevents) > 0:
+            if(errorevents) > 1:
+                print(f"event {self.identity[0]} block next events", end='')
+            else:
+                print(f"event {self.identity[0]} block next event", end='')
+            for events in errorevents:
+                print(events[0], end='')
 
 
 def verify(identity1: ChronIdentity, identity2: ChronIdentity, chronicle1: Chronicle, chronicle2: Chronicle):
